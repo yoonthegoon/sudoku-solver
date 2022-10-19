@@ -1,4 +1,3 @@
-from itertools import chain
 import requests
 from bs4 import BeautifulSoup
 
@@ -31,11 +30,7 @@ def verify_col(grid: list[list[int]], x: int, guess: int) -> bool:
 
 
 def verify_box(grid: list[list[int]], x: int, y: int, guess: int) -> bool:
-    box = [[0 for _ in range(3)] for _ in range(3)]
-    for _y in range(3):
-        for _x in range(3):
-            box[_y][_x] = grid[y // 3 * 3 + _y][x // 3 * 3 + _x]
-    box = list(chain(*box))
+    box = [grid[y // 3 * 3 + i // 3][x // 3 * 3 + i % 3] for i in range(9)]
     if guess in box:
         return False
     return True
@@ -49,8 +44,6 @@ def verify_pos(grid: list[list[int]], x: int, y: int, guess: int) -> bool:
 
 
 def solve(grid: list[list[int]]) -> list[list[int]] or None:
-    grid = grid
-
     for y, row in enumerate(grid):
         for x, digit in enumerate(row):
             if not digit:
@@ -87,8 +80,8 @@ def display(grid: list[list[int]]) -> None:
 
 def main(url: str):
     grid = scrape(url)
-    solution = solve(grid)
-    display(solution)
+    solve(grid)
+    display(grid)
 
 
 if __name__ == '__main__':

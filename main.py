@@ -1,0 +1,95 @@
+from itertools import chain
+import requests
+from bs4 import BeautifulSoup
+
+
+def scrape(url: str) -> list[list[int]]:
+    url = url.replace('www', 'nine')  # frame source
+
+    r = requests.get(url)
+    soup = BeautifulSoup(r.text, 'html.parser')
+
+    grid = [[0 for _ in range(9)] for _ in range(9)]
+    for y in range(9):
+        for x in range(9):
+            grid[y][x] = int(soup.find(id=f'f{x}{y}').get('value', '0'))
+
+    return grid
+
+
+def verify_row(grid: list[list[int]], y: int, guess: int) -> bool:
+    if guess in grid[y]:
+        return False
+    return True
+
+
+def verify_col(grid: list[list[int]], x: int, guess: int) -> bool:
+    col = [row[x] for row in grid]
+    if guess in col:
+        return False
+    return True
+
+
+def verify_box(grid: list[list[int]], x: int, y: int, guess: int) -> bool:
+    box = [[0 for _ in range(3)] for _ in range(3)]
+    for _y in range(3):
+        for _x in range(3):
+            box[_y][_x] = grid[y // 3 * 3 + _y][x // 3 * 3 + _x]
+    box = list(chain(*box))
+    if guess in box:
+        return False
+    return True
+
+
+def verify_pos(grid: list[list[int]], x: int, y: int, guess: int) -> bool:
+    row = verify_row(grid, y, guess)
+    col = verify_col(grid, x, guess)
+    box = verify_box(grid, x, y, guess)
+    return all((row, col, box))
+
+
+def solve(grid: list[list[int]]) -> list[list[int]] or None:
+    grid = grid
+
+    for y, row in enumerate(grid):
+        for x, digit in enumerate(row):
+            if not digit:
+                for i in range(1, 10):
+                    valid = verify_pos(grid, x, y, i)
+                    if valid:
+                        grid[y][x] = i
+                        solution = solve(grid)
+
+                        if solution:
+                            return solution
+
+                grid[y][x] = 0
+                return
+
+    return grid
+
+
+def display(grid: list[list[int]]) -> None:
+    for y, row in enumerate(grid):
+        if y % 3 == 0:
+            print('+-------+-------+-------+')
+
+        for x, digit in enumerate(row):
+            if x % 3 == 0:
+                print('| ', end='')
+
+            print(digit, end=' ') if digit else print('_', end=' ')
+
+        print('|')
+
+    print('+-------+-------+-------+\n')
+
+
+def main(url: str):
+    grid = scrape(url)
+    solution = solve(grid)
+    display(solution)
+
+
+if __name__ == '__main__':
+    main('https://www.websudoku.com/?level=4&set_id=6001986830')
